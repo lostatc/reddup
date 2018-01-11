@@ -39,7 +39,7 @@ func NewExcludeFromFile(path string) (*Exclude, error) {
 }
 
 // CheckMatch returns true if the given file path matches any pattern relative
-// to startDir. Otherwise, it returns false.
+// tto startDir. Otherwise, it returns false.
 func (e *Exclude) CheckMatch(checkPath string, startDir string) (matches bool) {
 	for _, relPattern := range e.Patterns {
 		absPattern := filepath.Join(startDir, relPattern)
@@ -54,23 +54,3 @@ func (e *Exclude) CheckMatch(checkPath string, startDir string) (matches bool) {
 
 	return false
 }
-
-// Get the paths of files in the directory startPath that match the patterns.
-//func (e *Exclude) Match(startPath string) (matches []FilePath) {
-//	for _, relPattern := range e.Patterns {
-//		absPattern := filepath.Join(startPath, relPattern)
-//		paths, err := filepath.Glob(absPattern)
-//		if err != nil {
-//			continue
-//		}
-//		for _, path := range paths {
-//			newFilePath, err := NewFilePath(path)
-//			if err != nil {
-//				continue
-//			}
-//			matches = append(matches, newFilePath)
-//		}
-//	}
-//
-//	return matches
-//}
