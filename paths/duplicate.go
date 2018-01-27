@@ -11,13 +11,14 @@ type SHA256Sum [32]byte
 const BlockSize int = 4096
 
 // GetDuplicates determines which of the given files are identical and returns
-// them. It compares files first by size and then by checksum.
-func GetDuplicates(paths []FilePath) (duplicates []FilePath) {
+// them. Each FilePaths object in the slice that is returned represents a group
+// of identical files. Files are compared first by size and then by checksum.
+func GetDuplicates(paths FilePaths) (duplicates []FilePaths) {
 	// Get the sizes of each file.
-	sizes := make(map[int64][]FilePath)
-	sameSizeFiles := make([]FilePath, 0)
+	sizes := make(map[int64]FilePaths)
+	sameSizeFiles := make(FilePaths, 0)
 	for _, path := range paths {
-		sizes[path.Size()] = append(sizes[path.Size()], path)
+		sizes[path.Stat.Size()] = append(sizes[path.Stat.Size()], path)
 	}
 
 	// Find files with the same size.
@@ -28,7 +29,7 @@ func GetDuplicates(paths []FilePath) (duplicates []FilePath) {
 	}
 
 	// Get the hashes of files with the same size.
-	hashes := make(map[SHA256Sum][]FilePath)
+	hashes := make(map[SHA256Sum]FilePaths)
 	for _, path := range sameSizeFiles {
 		sum, err := checksum(path.Path)
 		if err != nil {
@@ -40,8 +41,27 @@ func GetDuplicates(paths []FilePath) (duplicates []FilePath) {
 	// Find files with the same hash.
 	for _, paths := range hashes {
 		if len(paths) > 1 {
-			duplicates = append(duplicates, paths...)
+			duplicates = append(duplicates, paths)
 		}
+	}
+
+	return duplicates
+}
+
+// GetNewestDuplicates returns the file with the most recent mtime for each
+// group of duplicate files from the input.
+func GetNewestDuplicates(paths FilePaths) (duplicates FilePaths) {
+	allDuplicates := GetDuplicates(paths)
+	for _, group := range allDuplicates {
+		newestPath := group[0]
+
+		for _, filePath := range group {
+			if filePath.Stat.ModTime().After(newestPath.Stat.ModTime()) {
+				newestPath = filePath
+			}
+		}
+
+		duplicates = append(duplicates, newestPath)
 	}
 
 	return duplicates

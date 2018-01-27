@@ -19,7 +19,7 @@ const (
 	Year time.Duration = Month * 12
 )
 
-func FileSize(size string) (numBytes int, err error) {
+func FileSize(size string) (numBytes int64, err error) {
 	sizeRegex, err := regexp.Compile(sizePattern)
 	if err != nil {
 		log.Fatal(err)
@@ -57,7 +57,7 @@ func FileSize(size string) (numBytes int, err error) {
 		log.Fatal(err)
 	}
 
-	return coefficient * int(math.Pow(base, exponent)), nil
+	return int64(coefficient * int(math.Pow(base, exponent))), nil
 }
 
 func Duration(duration string) (time.Duration, error) {

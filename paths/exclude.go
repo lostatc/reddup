@@ -6,6 +6,9 @@ import (
 	"bufio"
 	"regexp"
 	"log"
+
+	"github.com/bmatcuk/doublestar"
+	"strings"
 )
 
 const CommentPattern string = `^\s*#`
@@ -42,11 +45,19 @@ func NewExcludeFromFile(path string) (*Exclude, error) {
 // tto startDir. Otherwise, it returns false.
 func (e *Exclude) CheckMatch(checkPath string, startDir string) (matches bool) {
 	for _, relPattern := range e.Patterns {
-		absPattern := filepath.Join(startDir, relPattern)
-		matches, err := filepath.Match(absPattern, checkPath)
+		var absPattern string
+
+		if strings.HasPrefix(relPattern, string(os.PathSeparator)) {
+			absPattern = filepath.Join(startDir, relPattern)
+		} else {
+			absPattern = filepath.Join("**", relPattern)
+		}
+
+		matches, err := doublestar.PathMatch(absPattern, checkPath)
 		if err != nil {
 			continue
 		}
+
 		if matches {
 			return true
 		}

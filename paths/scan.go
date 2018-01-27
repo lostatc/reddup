@@ -11,12 +11,6 @@ import (
 
 type FileMode uint
 
-type FilePath struct {
-	Path string
-	times.Timespec
-	os.FileInfo
-}
-
 const (
 	ModeFile FileMode = 1 << iota
 	ModeDir
@@ -24,18 +18,11 @@ const (
 	ModeAny = ModeFile | ModeDir | ModeLink
 )
 
-// NewFilePath creates a new FilePath struct from a path.
-func NewFilePath(path string) (FilePath, error) {
-	info, err := os.Stat(path)
-	timeInfo := times.Get(info)
-	return FilePath{Path: path, Timespec: timeInfo, FileInfo: info}, err
-}
-
 // scanDir accepts directory paths on a channel and returns their contents on a
 // channel.
 func scanDir(jobs chan FilePath, results chan FilePath, wg *sync.WaitGroup) {
 	for path := range jobs {
-		if !path.IsDir() {
+		if !path.Stat.IsDir() {
 			continue
 		}
 
@@ -54,7 +41,7 @@ func scanDir(jobs chan FilePath, results chan FilePath, wg *sync.WaitGroup) {
 		for _, info := range fileInfo {
 			absolutePath := filepath.Join(path.Path, info.Name())
 			timeInfo := times.Get(info)
-			filePath := FilePath{Path: absolutePath, Timespec: timeInfo, FileInfo: info}
+			filePath := FilePath{Path: absolutePath, Time: timeInfo, Stat: info}
 			results <- filePath
 		}
 	}
@@ -63,10 +50,10 @@ func scanDir(jobs chan FilePath, results chan FilePath, wg *sync.WaitGroup) {
 
 // scanTrees concurrently scans all given file paths and returns directory
 // contents.
-func scanTrees(paths []FilePath, workers int) []FilePath {
+func scanTrees(paths FilePaths, workers int) FilePaths {
 	jobs := make(chan FilePath, 100)
 	results := make(chan FilePath, 100)
-	output := make([]FilePath, 0)
+	output := make(FilePaths, 0)
 	var wg sync.WaitGroup
 
 	// Start workers.
@@ -82,7 +69,7 @@ func scanTrees(paths []FilePath, workers int) []FilePath {
 	}(results)
 
 	// Pass file paths to workers.
-	go func(paths []FilePath) {
+	go func(paths FilePaths) {
 		for _, path := range paths {
 			jobs <- path
 		}
@@ -104,22 +91,22 @@ func scanTrees(paths []FilePath, workers int) []FilePath {
 
 // ScanTree returns all the file paths in the tree rooted at rootPath and with
 // the type specified by mask.
-func ScanTree(rootPath string, mode FileMode) ([]FilePath, error) {
+func ScanTree(rootPath string, mode FileMode) (FilePaths, error) {
 	root, err := NewFilePath(rootPath)
 	if err != nil {
 		return nil, err
 	}
 
-	paths := []FilePath{root}
+	paths := FilePaths{*root}
 	allPaths := scanTrees(paths, runtime.NumCPU())
-	outputPaths := make([]FilePath, 0)
+	outputPaths := make(FilePaths, 0)
 
 	for _, path := range allPaths {
-		if ((mode & ModeFile) == ModeFile) && ((path.Mode() & os.ModeType) == 0) {
+		if ((mode & ModeFile) == ModeFile) && ((path.Stat.Mode() & os.ModeType) == 0) {
 			outputPaths = append(outputPaths, path)
-		} else if ((mode & ModeDir) == ModeDir) && ((path.Mode() & os.ModeType) == os.ModeDir) {
+		} else if ((mode & ModeDir) == ModeDir) && ((path.Stat.Mode() & os.ModeType) == os.ModeDir) {
 			outputPaths = append(outputPaths, path)
-		} else if ((mode & ModeLink) == ModeLink) && ((path.Mode() & os.ModeType) == os.ModeSymlink) {
+		} else if ((mode & ModeLink) == ModeLink) && ((path.Stat.Mode() & os.ModeType) == os.ModeSymlink) {
 			outputPaths = append(outputPaths, path)
 		}
 	}

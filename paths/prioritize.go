@@ -12,16 +12,16 @@ type FilePriority struct {
 }
 
 // prioritizePaths sorts paths based on their size and atime.
-func prioritize(paths []FilePath) (sorted []FilePath) {
+func prioritize(paths FilePaths) (sorted FilePaths) {
 	// Get a priority for each file path based on the size and atime.
 	priorities := make([]FilePriority, 0)
 	for _, path := range paths {
-		size := path.Size()
+		size := path.Stat.Size()
 		var priority float64
 		if size == 0 {
 			priority = math.Inf(1)
 		} else {
-			priority = float64(path.AccessTime().Unix() / size)
+			priority = float64(path.Time.AccessTime().Unix() / size)
 		}
 		priorities = append(priorities, FilePriority{File: path, Priority: priority})
 	}
@@ -44,18 +44,18 @@ func prioritize(paths []FilePath) (sorted []FilePath) {
 
 // Filter returns the lowest-priority file paths that fit within totalSize and
 // were last accessed at least minDuration in the past.
-func Filter(paths []FilePath, totalSize int, minDuration time.Duration) []FilePath {
+func Filter(paths FilePaths, totalSize int64, minDuration time.Duration) FilePaths {
 	sortedPaths :=  prioritize(paths)
 	remainingSpace := int64(totalSize)
-	output := make([]FilePath, 0)
+	output := make(FilePaths, 0)
 	maxAtime := time.Now().Add(-minDuration)
 
 	for _, path := range sortedPaths {
-		if path.Size() == 0 || path.AccessTime().After(maxAtime) {
+		if path.Stat.Size() == 0 || path.Time.AccessTime().After(maxAtime) {
 			continue
 		}
 
-		newRemainingSpace := remainingSpace - path.Size()
+		newRemainingSpace := remainingSpace - path.Stat.Size()
 		if newRemainingSpace >= 0 {
 			output = append(output, path)
 			remainingSpace = newRemainingSpace
