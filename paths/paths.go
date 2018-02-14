@@ -2,6 +2,7 @@ package paths
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/djherbis/times"
 )
@@ -35,6 +36,16 @@ func NewFilePaths(paths []string) (*FilePaths, error) {
 		output = append(output, *newFilePath)
 	}
 	return &output, nil
+}
+
+// NewFilePathsFromRel creates a new FilePaths struct from a set of relative
+// file paths and a base path.
+func NewFilePathsFromRel(paths []string, base string) (*FilePaths, error) {
+	var absPaths []string
+	for _, relPath := range paths {
+		absPaths = append(absPaths, filepath.Join(base, relPath))
+	}
+	return NewFilePaths(absPaths)
 }
 
 // Difference returns all FilePath objects found in this slice but not in
