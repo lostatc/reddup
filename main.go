@@ -128,10 +128,10 @@ func main() {
 
 // enforceArgs returns a function that enforces a specific number of arguments.
 func enforceArgs(numArgs int) cli.BeforeFunc {
-	return func(context *cli.Context) error {
-		if len(context.Args()) < numArgs {
+	return func(c *cli.Context) error {
+		if len(c.Args()) < numArgs {
 			return fmt.Errorf("not enough arguments")
-		} else if len(context.Args()) > numArgs {
+		} else if len(c.Args()) > numArgs {
 			return fmt.Errorf("too many arguments")
 		}
 		return nil
@@ -139,8 +139,8 @@ func enforceArgs(numArgs int) cli.BeforeFunc {
 }
 
 // list executes the 'list' command.
-func list(context *cli.Context) (err error) {
-	delPaths := getPaths(context)
+func list(c *cli.Context) (err error) {
+	delPaths := getPaths(c)
 	for _, filePath := range delPaths {
 		fmt.Println(filePath.Path)
 	}
@@ -148,13 +148,13 @@ func list(context *cli.Context) (err error) {
 }
 
 // move executes the 'move' command.
-func move(context *cli.Context) (err error) {
-	delPaths := getPaths(context)
-	sourceDir := context.Args()[1]
-	destDir := context.Args()[2]
+func move(c *cli.Context) (err error) {
+	delPaths := getPaths(c)
+	sourceDir := c.Args()[1]
+	destDir := c.Args()[2]
 
 	moveFiles := true
-	if context.Bool("no-prompt") == false {
+	if c.Bool("no-prompt") == false {
 		// Print the files to transfer.
 		for _, filePath := range delPaths {
 			fmt.Println(filePath.Path)
@@ -178,7 +178,7 @@ func move(context *cli.Context) (err error) {
 
 	if moveFiles {
 		// Move the files.
-		if context.Bool("structure") {
+		if c.Bool("structure") {
 			paths.MoveStructuredFiles(sourceDir, delPaths, destDir)
 		} else {
 			paths.MoveFiles(delPaths, destDir)
@@ -193,14 +193,14 @@ func move(context *cli.Context) (err error) {
 
 // getPaths returns the paths of files that should be cleaned up based on the
 // given arguments.
-func getPaths(context *cli.Context) (delPaths paths.FilePaths) {
+func getPaths(c *cli.Context) (delPaths paths.FilePaths) {
 	// Parse arguments.
-	maxSize, err := input.FileSize(context.Args()[0])
+	maxSize, err := input.FileSize(c.Args()[0])
 	if err != nil {
 		log.Fatal(err)
 	}
-	startDir := context.Args()[1]
-	minDuration, err := input.Duration(context.GlobalString("min-time"))
+	startDir := c.Args()[1]
+	minDuration, err := input.Duration(c.GlobalString("min-time"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -213,15 +213,15 @@ func getPaths(context *cli.Context) (delPaths paths.FilePaths) {
 
 	// Parse the exclude patterns or the exclude pattern file if given.
 	var exclude *paths.Exclude
-	if context.GlobalString("exclude-from") == "" {
+	if c.GlobalString("exclude-from") == "" {
 		exclude = new(paths.Exclude)
 	} else {
-		exclude, err = paths.NewExcludeFromFile(context.GlobalString("exclude-from"))
+		exclude, err = paths.NewExcludeFromFile(c.GlobalString("exclude-from"))
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	for _, pattern := range context.GlobalStringSlice("exclude") {
+	for _, pattern := range c.GlobalStringSlice("exclude") {
 		exclude.Patterns = append(exclude.Patterns, pattern)
 	}
 
@@ -234,10 +234,7 @@ func getPaths(context *cli.Context) (delPaths paths.FilePaths) {
 	}
 
 	// Select paths to be cleaned up. Duplicate files are selected first.
-	duplicatePaths := paths.GetNewestDuplicates(nonExcludedPaths)
-	delPaths = append(delPaths, duplicatePaths...)
-	maxSize -= duplicatePaths.TotalSize()
-	delPaths = append(delPaths, paths.Filter(nonExcludedPaths.Difference(duplicatePaths), maxSize, minDuration)...)
+	delPaths = paths.DuplicateFilter(nonExcludedPaths, maxSize, minDuration)
 
 	return delPaths
 }
