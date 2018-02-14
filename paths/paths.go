@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 
 	"github.com/djherbis/times"
+	"fmt"
+	"strings"
 )
 
 type FilePath struct {
@@ -21,6 +23,11 @@ func NewFilePath(path string) (*FilePath, error) {
 	}
 	timeInfo := times.Get(info)
 	return &FilePath{Path: path, Time: timeInfo, Stat: info}, nil
+}
+
+// String returns the default string representation of the type.
+func (f FilePath) String() string {
+	return fmt.Sprintf("\"%v\"", f.Path)
 }
 
 type FilePaths []FilePath
@@ -46,6 +53,15 @@ func NewFilePathsFromRel(paths []string, base string) (*FilePaths, error) {
 		absPaths = append(absPaths, filepath.Join(base, relPath))
 	}
 	return NewFilePaths(absPaths)
+}
+
+// String returns the default string representation of the type.
+func (f FilePaths) String() string {
+	var pathStrings []string
+	for _, filePath := range f {
+		pathStrings = append(pathStrings, filePath.String())
+	}
+	return "[" + strings.Join(pathStrings, ", ") + "]"
 }
 
 // Difference returns all FilePath objects found in this slice but not in
