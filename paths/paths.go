@@ -7,6 +7,7 @@ import (
 	"github.com/djherbis/times"
 	"fmt"
 	"strings"
+	"sort"
 )
 
 type FilePath struct {
@@ -55,7 +56,8 @@ func NewFilePathsFromRel(paths []string, base string) (*FilePaths, error) {
 	return NewFilePaths(absPaths)
 }
 
-// String returns the default string representation of the type.
+// String returns the default string representation of the type. This satisfies
+// the fmt.Stringer interface.
 func (f FilePaths) String() string {
 	var pathStrings []string
 	for _, filePath := range f {
@@ -64,6 +66,20 @@ func (f FilePaths) String() string {
 	return "[" + strings.Join(pathStrings, ", ") + "]"
 }
 
+// Len satisfies the sort.Interface interface.
+func (f FilePaths) Len() int {
+	return len(f)
+}
+
+// Swap satisfies the sort.Interface interface.
+func (f FilePaths) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
+}
+
+// Less satisfies the sort.Interface interface.
+func (f FilePaths) Less(i, j int) bool {
+	return f[i].Path < f[j].Path
+}
 // Difference returns all FilePath objects found in this slice but not in
 // other.
 func (f FilePaths) Difference(other FilePaths) FilePaths {
