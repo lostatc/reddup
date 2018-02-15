@@ -103,14 +103,14 @@ func (f FilePaths) Equals(other FilePaths) bool {
 // other.
 func (f FilePaths) Difference(other FilePaths) FilePaths {
 	output := make(FilePaths, 0)
-	otherMap := make(map[FilePath]struct{})
+	otherMap := make(map[string]struct{})
 
 	for _, filePath := range other {
-		otherMap[filePath] = struct{}{}
+		otherMap[filePath.Path] = struct{}{}
 	}
 
 	for _, filePath := range f {
-		if _, ok := otherMap[filePath]; !ok {
+		if _, ok := otherMap[filePath.Path]; !ok {
 			output = append(output, filePath)
 		}
 	}
