@@ -150,7 +150,7 @@ func GetNewestDuplicates(paths FilePaths) (duplicates FilePaths) {
 // DuplicateFilter is equivalent to Filter but prioritizes duplicate files.
 func DuplicateFilter(paths FilePaths, totalSize int64, minDuration time.Duration) FilePaths {
 	duplicatePaths := GetNewestDuplicates(paths)
-	selectedPaths := append(paths, duplicatePaths...)
+	selectedPaths := duplicatePaths
 	maxSize := totalSize - duplicatePaths.TotalSize()
 	selectedPaths = append(selectedPaths, Filter(paths.Difference(duplicatePaths), maxSize, minDuration)...)
 
