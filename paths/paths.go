@@ -80,6 +80,25 @@ func (f FilePaths) Swap(i, j int) {
 func (f FilePaths) Less(i, j int) bool {
 	return f[i].Path < f[j].Path
 }
+
+// Equals returns true if this slice and other contain all the same paths.
+func (f FilePaths) Equals(other FilePaths) bool {
+	if len(f) != len(other) {
+		return false
+	}
+
+	sort.Sort(f)
+	sort.Sort(other)
+
+	for i, filePath := range f {
+		if filePath.Path != other[i].Path {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Difference returns all FilePath objects found in this slice but not in
 // other.
 func (f FilePaths) Difference(other FilePaths) FilePaths {
