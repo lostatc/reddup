@@ -10,14 +10,14 @@ import (
 	"time"
 )
 
-const sizePattern string = `^(?i)([0-9]+)\s*([KMG])(B|iB)?$`
+const sizePattern string = `^(?i)([0-9]+)\s*([KMGTPEZY])(B|iB)?$`
 const durationPattern string = `(?i)([0-9]+)\s*([hdmy])`
 
 const (
 	durationHour time.Duration = time.Hour
-	durationDay time.Duration = durationHour * 24
-	durationMonth time.Duration = durationDay * 30
-	durationYear time.Duration = durationMonth * 12
+	durationDay = durationHour * 24
+	durationMonth = durationDay * 30
+	durationYear = durationMonth * 12
 )
 
 // The keys in these maps must be lower-case.
@@ -66,6 +66,9 @@ func ReadDuration(duration string) (time.Duration, error) {
 		log.Fatal(err)
 	}
 	matches := durationRegex.FindAllStringSubmatch(duration, -1)
+	if len(matches) == 0 {
+		return 0, fmt.Errorf("the string '%s' is not a valid time duration", duration)
+	}
 	output := time.Duration(0)
 
 	for _, match := range matches {
@@ -76,7 +79,7 @@ func ReadDuration(duration string) (time.Duration, error) {
 		}
 		unit = strings.ToLower(unit)
 
-		output += time.Duration(num) + durationUnits[unit]
+		output += time.Duration(num) * durationUnits[unit]
 	}
 
 	return output, nil
