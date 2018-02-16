@@ -70,19 +70,19 @@ func writeFiles(contents fileContents) error {
 }
 
 // assertPathsEqual checks that the returned file paths are the same as the
-// expected file paths and returns an error if they are not. The expected file
+// expected file paths and fails the test if they are not. The expected file
 // paths are paths relative to startPath.
-func assertPathsEqual(returned FilePaths, expected []string, startPath string) (err error) {
+func assertPathsEqual(t *testing.T, returned FilePaths, expected []string, startPath string) (err error) {
 	expectedFilePaths, err := NewFilePathsFromRel(expected, startPath)
 	if err != nil {
 		return err
 	}
 
 	if !returned.Equals(*expectedFilePaths) {
-		return fmt.Errorf(
+		t.Error(fmt.Sprintf(
 			"\nReturned but not expected: %v\nExpected but not returned: %v",
 			returned.Difference(*expectedFilePaths),
-			expectedFilePaths.Difference(returned))
+			expectedFilePaths.Difference(returned)))
 	}
 
 	return nil

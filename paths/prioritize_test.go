@@ -27,10 +27,7 @@ func TestGetDuplicates(t *testing.T) {
 	duplicatePaths := GetDuplicates(*pathsToTest)
 	expectedPaths := []string{"letters/a.txt", "letters/upper/A.txt"}
 
-	err = assertPathsEqual(duplicatePaths[0], expectedPaths, tempPath)
-	if err != nil {
-		t.Error(err)
-	}
+	assertPathsEqual(t, duplicatePaths[0], expectedPaths, tempPath)
 }
 
 func TestGetNewestDuplicates(t *testing.T) {
@@ -55,10 +52,7 @@ func TestGetNewestDuplicates(t *testing.T) {
 	duplicatePaths := GetNewestDuplicates(*pathsToTest)
 	expectedPaths := []string{"letters/a.txt"}
 
-	err = assertPathsEqual(duplicatePaths, expectedPaths, tempPath)
-	if err != nil {
-		t.Error(err)
-	}
+	assertPathsEqual(t, duplicatePaths, expectedPaths, tempPath)
 }
 
 func TestFilter(t *testing.T) {
@@ -88,8 +82,5 @@ func TestFilter(t *testing.T) {
 	filteredPaths := Filter(*pathsToTest, 2, time.Second * 2)
 	expectedPaths := []string{"letters/a.txt"}
 
-	err = assertPathsEqual(filteredPaths, expectedPaths, tempPath)
-	if err != nil {
-		t.Error(err)
-	}
+	assertPathsEqual(t, filteredPaths, expectedPaths, tempPath)
 }

@@ -9,9 +9,9 @@ func TestScanTree(t *testing.T) {
 	defer teardownFunc()
 
 	testCases := []struct {
-		testName string
-		mode FileMode
-		expectedPaths []string
+		TestName string
+		Mode FileMode
+		ExpectedPaths []string
 	}{
 		{"Any", ModeAny, testingPaths},
 		{"Files and dirs", ModeFile | ModeDir, testingPaths},
@@ -20,16 +20,13 @@ func TestScanTree(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.testName, func(t *testing.T) {
-			scannedPaths, err := ScanTree(tempPath, tc.mode)
+		t.Run(tc.TestName, func(t *testing.T) {
+			scannedPaths, err := ScanTree(tempPath, tc.Mode)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			err = assertPathsEqual(scannedPaths, tc.expectedPaths, tempPath)
-			if err != nil {
-				t.Error(err)
-			}
+			assertPathsEqual(t, scannedPaths, tc.ExpectedPaths, tempPath)
 		})
 	}
 }
