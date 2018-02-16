@@ -21,8 +21,11 @@ const (
 )
 
 // The keys in these maps must be lower-case.
-var sizePrefixes = map[string]int{"k": 1, "m": 2, "g": 3, "t": 4, "p": 5, "e": 6, "z": 7, "y": 8}
-var durationUnits = map[string]time.Duration{"h": durationHour, "d": durationDay, "m": durationMonth, "y": durationYear}
+var sizeReadPrefixes = map[string]int{"k": 1, "m": 2, "g": 3, "t": 4, "p": 5, "e": 6, "z": 7, "y": 8}
+var durationReadUnits = map[string]time.Duration{"h": durationHour, "d": durationDay, "m": durationMonth, "y": durationYear}
+
+var sizeFormatUnits = []string{"KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
+const sizeFormatBase = 1024
 
 // ReadFileSize parses a human-readable file size string and returns a number
 // of bytes. It recognizes both metric and binary units.
@@ -48,7 +51,7 @@ func ReadFileSize(size string) (numBytes int64, err error) {
 		base = 1000
 	}
 
-	exponent := float64(sizePrefixes[prefix])
+	exponent := float64(sizeReadPrefixes[prefix])
 
 	coefficient, err := strconv.Atoi(num)
 	if err != nil {
@@ -56,6 +59,23 @@ func ReadFileSize(size string) (numBytes int64, err error) {
 	}
 
 	return int64(coefficient * int(math.Pow(base, exponent))), nil
+}
+
+// FormatFileSize formats a number of bytes
+func FormatFileSize(numBytes int64) string {
+	if numBytes < sizeFormatBase {
+		return fmt.Sprintf("%vB", numBytes)
+	}
+
+	output := float32(numBytes)
+
+	prefixCounter := -1
+	for output >= sizeFormatBase && prefixCounter < len(sizeFormatUnits) {
+		output /= sizeFormatBase
+		prefixCounter++
+	}
+
+	return fmt.Sprintf("%.1f%s", output, sizeFormatUnits[prefixCounter])
 }
 
 // ReadDuration parses a human-readable duration string. It recognizes the
@@ -79,7 +99,7 @@ func ReadDuration(duration string) (time.Duration, error) {
 		}
 		unit = strings.ToLower(unit)
 
-		output += time.Duration(num) * durationUnits[unit]
+		output += time.Duration(num) * durationReadUnits[unit]
 	}
 
 	return output, nil

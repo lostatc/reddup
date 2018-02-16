@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"os"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/urfave/cli"
 
@@ -39,14 +40,17 @@ Options:
     {{end}}{{end}}
 `
 
+// This is the number of spaces of padding to put between columns in the output of "list."
+const listPadding = 2
+
 func main() {
 	cli.AppHelpTemplate = appHelpTemplate
 	cli.CommandHelpTemplate = commandHelpTemplate
-	cli.HelpFlag = cli.BoolFlag{
+	cli.HelpFlag = cli.BoolFlag {
 		Name: "help",
 		Usage: "Show help.",
 	}
-	cli.VersionFlag = cli.BoolFlag{
+	cli.VersionFlag = cli.BoolFlag {
 		Name: "version",
 		Usage: "Display the version.",
 	}
@@ -54,8 +58,8 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "reddup"
 	app.Version = "0.1.0"
-	app.Authors = []cli.Author{
-		cli.Author{
+	app.Authors = []cli.Author {
+		cli.Author {
 			Name: "Garrett Powell",
 			Email: "garrett@gpowell.net",
 		},
@@ -63,16 +67,16 @@ func main() {
 	app.Copyright = "Copyright © 2017-2018 Garrett Powell <garrett@gpowell.net>"
 	app.Usage = "Clean up unused files."
 
-	app.Flags = []cli.Flag{
-		cli.StringSliceFlag{
+	app.Flags = []cli.Flag {
+		cli.StringSliceFlag {
 			Name: "exclude",
 			Usage: "Exclude files that match this `pattern`.",
 		},
-		cli.StringFlag{
+		cli.StringFlag {
 			Name: "exclude-from",
 			Usage: "Exclude files that match patterns in this `file`.",
 		},
-		cli.StringFlag{
+		cli.StringFlag {
 			Name:  "min-time, t",
 			Usage: "Only include files which were last modified at least this much `time` in the past. This accepts the units 'h,' 'd,' 'm'  and 'y.'",
 			Value: "0h",
@@ -80,26 +84,32 @@ func main() {
 		cli.HelpFlag,
 	}
 
-	app.Commands = []cli.Command{
-		cli.Command{
+	app.Commands = []cli.Command {
+		cli.Command {
 			Name: "list",
 			Usage: "Print a list of files that should be cleaned up.",
-			Description: "Print a list of up to size bytes of files in the directory source that should be cleaned up.",
+			Description: "Print a list of up to size bytes of files in the directory source that should be cleaned up. Also print the size and last access time of each file.",
 			ArgsUsage: "size source",
+			Flags: []cli.Flag{
+				cli.BoolFlag {
+					Name: "paths-only",
+					Usage: "Print only a list of newline-delimited file paths.",
+				},
+			},
 			Before: enforceArgs(2),
 			Action: list,
 		},
-		cli.Command{
+		cli.Command {
 			Name: "move",
 			Usage: "Move files that should be cleaned up, prompting the user for confirmation first.",
 			Description: "Move up to size bytes of files that should be cleaned up from source to dest (e.g. 10GiB)t.",
 			ArgsUsage: "size source dest",
-			Flags: []cli.Flag{
-				cli.BoolFlag{
+			Flags: []cli.Flag {
+				cli.BoolFlag {
 					Name: "structure",
 					Usage: "Preserve the file structure.",
 				},
-				cli.BoolFlag{
+				cli.BoolFlag {
 					Name: "no-prompt",
 					Usage: "Don't prompt the user for confirmation before moving files.",
 				},
@@ -107,7 +117,7 @@ func main() {
 			Before: enforceArgs(3),
 			Action: move,
 		},
-		cli.Command{
+		cli.Command {
 			Name: "help",
 			Usage: "Show a list of commands or help for one command.",
 			ArgsUsage: "[command]",
@@ -141,9 +151,24 @@ func enforceArgs(numArgs int) cli.BeforeFunc {
 // list executes the 'list' command.
 func list(c *cli.Context) (err error) {
 	delPaths := getPaths(c)
-	for _, filePath := range delPaths {
-		fmt.Println(filePath.Path)
+
+	if c.Bool("paths-only") {
+		for _, filePath := range delPaths {
+			fmt.Println(filePath.Path)
+		}
+	} else {
+		writer := tabwriter.NewWriter(os.Stdout, 0, 0, listPadding, ' ', 0)
+		fmt.Fprintln(writer, "Size\tLast Access\tPath")
+		for _, filePath := range delPaths {
+			fmt.Fprintf(
+				writer, "%v\t%v\t%v\n",
+				parse.FormatFileSize(filePath.Stat.Size()),
+				filePath.Time.AccessTime().Format("Jan 1 2006 15:04"),
+				filePath.Path)
+		}
+		writer.Flush()
 	}
+
 	return nil
 }
 
