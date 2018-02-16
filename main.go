@@ -9,7 +9,7 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/lostatc/reddup/input"
+	"github.com/lostatc/reddup/parse"
 	"github.com/lostatc/reddup/paths"
 )
 
@@ -92,7 +92,7 @@ func main() {
 		cli.Command{
 			Name: "move",
 			Usage: "Move files that should be cleaned up, prompting the user for confirmation first.",
-			Description: "Move up to size bytes of files that should be cleaned up from source to dest. Accepted units for size are 'KB,' 'MB,' 'GB,' 'KiB,' 'MiB' and 'GiB.'",
+			Description: "Move up to size bytes of files that should be cleaned up from source to dest (e.g. 10GiB)t.",
 			ArgsUsage: "size source dest",
 			Flags: []cli.Flag{
 				cli.BoolFlag{
@@ -195,12 +195,12 @@ func move(c *cli.Context) (err error) {
 // given arguments.
 func getPaths(c *cli.Context) (delPaths paths.FilePaths) {
 	// Parse arguments.
-	maxSize, err := input.FileSize(c.Args()[0])
+	maxSize, err := parse.ReadFileSize(c.Args()[0])
 	if err != nil {
 		log.Fatal(err)
 	}
 	startDir := c.Args()[1]
-	minDuration, err := input.Duration(c.GlobalString("min-time"))
+	minDuration, err := parse.ReadDuration(c.GlobalString("min-time"))
 	if err != nil {
 		log.Fatal(err)
 	}
