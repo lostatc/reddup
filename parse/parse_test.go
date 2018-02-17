@@ -12,6 +12,14 @@ func assertValue(t *testing.T, returned interface{}, expected interface{}) {
 	}
 }
 
+func assertIntSlice(t *testing.T, returned []int, expected []int) {
+	for i, value := range returned {
+		if value != expected[i]	 {
+			t.Error(fmt.Sprintf("\nExpected: %v\nReturned: %v", expected, returned))
+		}
+	}
+}
+
 func assertError(t *testing.T, returnedError error, errorExpected bool) {
 	if returnedError == nil && errorExpected {
 		t.Error("error expected but not returned")
@@ -63,6 +71,31 @@ func TestReadDuration(t *testing.T) {
 		t.Run(tc.TestName, func(t *testing.T) {
 			returned, err := ReadDuration(tc.Input)
 			assertValue(t, returned, tc.ExpectedOutput)
+			assertError(t, err, tc.ErrorExpected)
+		})
+	}
+}
+
+func TestReadNumberRanges(t *testing.T) {
+	testCases := []struct {
+		TestName string
+		Input string
+		ExpectedOutput []int
+		ErrorExpected bool
+	}{
+		{"Individual numbers", "2,4,8", []int{2, 4, 8}, false},
+		{"Ranges", "2-4,16-20", []int{2, 3, 4, 16, 17, 18, 19, 20}, false},
+		{"Mixed", "2-4,16", []int{2, 3, 4, 16}, false},
+		{"With spaces", " 2 - 4 , 16 ", []int{2, 3, 4, 16}, false},
+		{"Empty", "", []int{}, false},
+		{"Letters", "a-b,c", []int{}, true},
+		{"Negative numbers", "-1-2", []int{}, true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.TestName, func(t *testing.T) {
+			returned, err := ReadNumberRanges(tc.Input)
+			assertIntSlice(t, returned, tc.ExpectedOutput)
 			assertError(t, err, tc.ErrorExpected)
 		})
 	}
