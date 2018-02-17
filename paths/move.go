@@ -42,21 +42,6 @@ func moveFile(srcPath, destPath string) (err error) {
 	return nil
 }
 
-// MoveFiles moves the files srcPaths to the directory at destPath. File mtimes
-// and permissions are preserved. If a file in destDir already exists, an error
-// is returned.
-func MoveFiles(srcPaths FilePaths, destDir string) (err error) {
-	for _, srcPath := range srcPaths {
-		basePath := filepath.Base(srcPath.Path)
-		destPath := filepath.Join(destDir, basePath)
-		err := moveFile(srcPath.Path, destPath)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // MoveStructuredFiles moves the files srcPaths to the directory at destPath
 // and preserves their original file structure relative to srcDir. File mtimes
 // and permissions are preserved. If a file in destDir already exists, an error

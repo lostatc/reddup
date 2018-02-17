@@ -103,13 +103,9 @@ func main() {
 		cli.Command {
 			Name: "move",
 			Usage: "Move files that should be cleaned up, prompting the user for confirmation first.",
-			Description: "Move up to size bytes of files that should be cleaned up from source to dest (e.g. 10GiB)t.",
+			Description: "Move up to size bytes of files that should be cleaned up from source to dest (e.g. 10GiB). Prompt the user for confirmation before moving anything.",
 			ArgsUsage: "size source dest",
 			Flags: []cli.Flag {
-				cli.BoolFlag {
-					Name: "structure",
-					Usage: "Preserve the file structure.",
-				},
 				cli.BoolFlag {
 					Name: "no-prompt",
 					Usage: "Don't prompt the user for confirmation before moving files.",
@@ -215,10 +211,9 @@ func move(c *cli.Context) (err error) {
 
 	if moveFiles {
 		// Move the files.
-		if c.Bool("structure") {
-			paths.MoveStructuredFiles(sourceDir, selectedPaths, destDir)
-		} else {
-			paths.MoveFiles(selectedPaths, destDir)
+		err := paths.MoveStructuredFiles(sourceDir, selectedPaths, destDir)
+		if err != nil {
+			return err
 		}
 		fmt.Printf("%d files moved\n", len(selectedPaths))
 	} else {
