@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"bufio"
 	"os"
+	"io"
 	"strings"
 	"text/tabwriter"
 
@@ -12,7 +13,6 @@ import (
 
 	"github.com/lostatc/reddup/parse"
 	"github.com/lostatc/reddup/paths"
-	"io"
 )
 
 const appHelpTemplate = `Usage:
@@ -71,15 +71,15 @@ func main() {
 	app.Flags = []cli.Flag {
 		cli.StringSliceFlag {
 			Name: "exclude",
-			Usage: "Exclude files that match this `pattern`.",
+			Usage: "Exclude files that match this `<pattern>`.",
 		},
 		cli.StringFlag {
 			Name: "exclude-from",
-			Usage: "Exclude files that match patterns in this `file`.",
+			Usage: "Exclude files that match patterns in this `<file>`.",
 		},
 		cli.StringFlag {
 			Name:  "min-time, t",
-			Usage: "Only include files which were last modified at least this much `time` in the past. This accepts the units 'h,' 'd,' 'm'  and 'y.'",
+			Usage: "Only include files which were last modified at least this much `<time>` in the past. This accepts the units 'h,' 'd,' 'm'  and 'y.'",
 			Value: "0h",
 		},
 		cli.HelpFlag,
@@ -89,12 +89,12 @@ func main() {
 		cli.Command {
 			Name: "list",
 			Usage: "Print a list of files that should be cleaned up.",
-			Description: "Print a list of up to size bytes of files in the directory source that should be cleaned up. Also print the size and last access time of each file.",
-			ArgsUsage: "size source",
+			Description: "Print a list of up to <size> bytes of files (e.g. 10GiB) in the directory <source> that should be cleaned up. For each file, also print its size, last access time and whether it is a duplicate.",
+			ArgsUsage: "<size> <source>",
 			Flags: []cli.Flag{
 				cli.BoolFlag {
 					Name: "paths-only",
-					Usage: "Print only a list of newline-delimited file paths.",
+					Usage: "Print only a list of newline-separated file paths.",
 				},
 			},
 			Before: enforceArgs(2),
@@ -103,8 +103,8 @@ func main() {
 		cli.Command {
 			Name: "move",
 			Usage: "Move files that should be cleaned up, prompting the user for confirmation first.",
-			Description: "Move up to size bytes of files that should be cleaned up from source to dest (e.g. 10GiB). Prompt the user for confirmation before moving anything.",
-			ArgsUsage: "size source dest",
+			Description: "Move up to <size> bytes of files (e.g. 10GiB) that should be cleaned up from <source> to <dest>. Prompt the user for confirmation before moving anything.",
+			ArgsUsage: "<size> <source> <dest>",
 			Flags: []cli.Flag {
 				cli.BoolFlag {
 					Name: "no-prompt",
