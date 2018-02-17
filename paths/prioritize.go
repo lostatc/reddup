@@ -155,6 +155,9 @@ func DuplicateFilter(paths FilePaths, totalSize int64, minDuration time.Duration
 	var selectedPaths FilePaths
 
 	duplicatePaths := GetNewestDuplicates(paths)
+	sort.Slice(duplicatePaths, func(i, j int) bool {
+		return duplicatePaths[j].Stat.Size() < duplicatePaths[i].Stat.Size()
+	})
 	for _, filePath := range duplicatePaths {
 		filePath.Flags |= FlagDuplicate
 		selectedPaths = append(selectedPaths, filePath)

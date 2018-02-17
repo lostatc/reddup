@@ -3,11 +3,11 @@ package paths
 import (
 	"os"
 	"path/filepath"
-
-	"github.com/djherbis/times"
 	"fmt"
 	"strings"
 	"sort"
+
+	"github.com/djherbis/times"
 )
 
 type FileFlags uint
