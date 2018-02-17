@@ -20,12 +20,19 @@ const (
 	durationYear = durationMonth * 12
 )
 
-// The keys in these maps must be lower-case.
+// This is used by ReadFileSize. The keys in this map must be lower-case.
 var sizeReadPrefixes = map[string]int{"k": 1, "m": 2, "g": 3, "t": 4, "p": 5, "e": 6, "z": 7, "y": 8}
+
+// This is used by ReadDuration. The keys in this map must be lower-case.
 var durationReadUnits = map[string]time.Duration{"h": durationHour, "d": durationDay, "m": durationMonth, "y": durationYear}
 
+// These are used by FormatFileSize.
 var sizeFormatUnits = []string{"KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 const sizeFormatBase = 1024
+
+// These are used by ReadNumberRanges.
+const rangeSeparator = ","
+const rangeSpecifier = "-"
 
 // ReadFileSize parses a human-readable file size string and returns a number
 // of bytes. It recognizes both metric and binary units.
@@ -103,4 +110,41 @@ func ReadDuration(duration string) (time.Duration, error) {
 	}
 
 	return output, nil
+}
+
+// ReadNumberRanges parses a comma separated list of number ranges (e.g. "1,7-12,15,47-50").
+func ReadNumberRanges(input string) (numbers []int, err error) {
+	if strings.TrimSpace(input) == "" {
+		return numbers, nil
+	}
+
+	ranges := strings.Split(input, rangeSeparator)
+
+	for _, numberRange := range ranges {
+		rangeNumbers := strings.Split(numberRange, rangeSpecifier)
+
+		if len(rangeNumbers) > 2 {
+			return numbers, fmt.Errorf("number ranges must only contain positive integers")
+		}
+
+		start, err := strconv.Atoi(strings.TrimSpace(rangeNumbers[0]))
+		if err != nil {
+			return numbers, fmt.Errorf("number ranges must only contain positive integers")
+		}
+
+		if len(rangeNumbers) == 1 {
+			numbers = append(numbers, start)
+		} else if len(rangeNumbers) == 2 {
+			end, err := strconv.Atoi(strings.TrimSpace(rangeNumbers[1]))
+			if err != nil {
+				return numbers, fmt.Errorf("number ranges must only contain positive integers")
+			}
+
+			for i := start; i <= end; i++ {
+				numbers = append(numbers, i)
+			}
+		}
+	}
+
+	return numbers, nil
 }

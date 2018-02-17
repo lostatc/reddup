@@ -173,17 +173,37 @@ func move(c *cli.Context) (err error) {
 	destDir := c.Args()[2]
 
 	moveFiles := true
-	if c.Bool("no-prompt") == false {
-		// Print the files to transfer.
+	var selectedPaths paths.FilePaths
+	if c.Bool("no-prompt") {
+		selectedPaths = delPaths
+	} else {
+		// Print all file paths.
 		printPaths(os.Stdout, delPaths)
 
-		// Prompt the user to confirm the file transfer.
-		fmt.Printf("Move these %d files? [y/N] ", len(delPaths))
-		reader := bufio.NewReader(os.Stdin)
-		confirmation, err := reader.ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
+		// Prompt the user to choose the file to transfer.
+		var selectedNumbers []int
+		for {
+			fmt.Println("\nSelect which files to transfer. You can specify comma-separated ranges of numbers (e.g. '1-9,15,17-20'). Leave blank to select all files.")
+			fmt.Print("> ")
+			numberRanges := readInput()
+			selectedNumbers, err = parse.ReadNumberRanges(numberRanges)
+			if err == nil {
+				break
+			}
 		}
+		if len(selectedNumbers) == 0 {
+			selectedPaths = delPaths
+		} else {
+			for _, num := range selectedNumbers {
+				selectedPaths = append(selectedPaths, delPaths[num - 1])
+			}
+		}
+
+		// Prompt the user to confirm the file transfer.
+		fmt.Println()
+		printPaths(os.Stdout, selectedPaths)
+		fmt.Printf("\nMove these %d files? [y/N] ", len(selectedPaths))
+		confirmation := readInput()
 		confirmation = strings.ToLower(confirmation)
 		confirmation = strings.TrimSuffix(confirmation, "\n")
 		switch confirmation {
@@ -196,11 +216,11 @@ func move(c *cli.Context) (err error) {
 	if moveFiles {
 		// Move the files.
 		if c.Bool("structure") {
-			paths.MoveStructuredFiles(sourceDir, delPaths, destDir)
+			paths.MoveStructuredFiles(sourceDir, selectedPaths, destDir)
 		} else {
-			paths.MoveFiles(delPaths, destDir)
+			paths.MoveFiles(selectedPaths, destDir)
 		}
-		fmt.Printf("%d files moved\n", len(delPaths))
+		fmt.Printf("%d files moved\n", len(selectedPaths))
 	} else {
 		fmt.Println("0 files moved")
 	}
@@ -261,9 +281,9 @@ func getPaths(c *cli.Context) (delPaths paths.FilePaths) {
 // whether the file is a duplicate.
 func printPaths(output io.Writer, pathsToPrint paths.FilePaths) {
 	writer := tabwriter.NewWriter(output, 0, 0, listPadding, ' ', 0)
-	fmt.Fprintln(writer, "Size\tLast Access\tDuplicate\tPath")
+	fmt.Fprintln(writer, "#\tSize\tLast Access\tDuplicate\tPath")
 
-	for _, filePath := range pathsToPrint {
+	for i, filePath := range pathsToPrint {
 		var isDuplicate string
 		if (filePath.Flags & paths.FlagDuplicate) == paths.FlagDuplicate {
 			isDuplicate = "Yes"
@@ -272,11 +292,23 @@ func printPaths(output io.Writer, pathsToPrint paths.FilePaths) {
 		}
 
 		fmt.Fprintf(
-			writer, "%v\t%v\t%v\t%v\n",
+			writer, "%d\t%s\t%v\t%s\t%s\n",
+			i + 1,
 			parse.FormatFileSize(filePath.Stat.Size()),
 			filePath.Time.AccessTime().Format("Jan 1 2006 15:04"),
 			isDuplicate,
 			filePath.Path)
 	}
 	writer.Flush()
+}
+
+// readInput reads a line from stdin.
+func readInput() string {
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return input
 }
