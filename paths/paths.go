@@ -10,10 +10,17 @@ import (
 	"sort"
 )
 
+type FileFlags uint
+
+const (
+	FlagDuplicate FileFlags = 1 << iota
+)
+
 type FilePath struct {
 	Path string
 	Time times.Timespec
 	Stat os.FileInfo
+	Flags FileFlags
 }
 
 // NewFilePath creates a new FilePath struct from a path.

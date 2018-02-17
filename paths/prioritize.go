@@ -18,7 +18,8 @@ type FilePriority struct {
 
 const BlockSize int = 4096
 
-// prioritizePaths sorts paths based on their size and atime.
+// prioritizePaths sorts paths based on their size and atime. Paths with a
+// larger size and less recent atime are sorted first.
 func prioritize(paths FilePaths) (sorted FilePaths) {
 	// Get a priority for each file path based on the size and atime.
 	priorities := make([]FilePriority, 0)
@@ -49,8 +50,8 @@ func prioritize(paths FilePaths) (sorted FilePaths) {
 	return sorted
 }
 
-// Filter returns the lowest-priority file paths that fit within totalSize and
-// were last accessed at least minDuration in the past.
+// Filter returns the files with the largest size and most recent atime that
+// fit within totalSize and were last accessed at least minDuration in the past.
 func Filter(paths FilePaths, totalSize int64, minDuration time.Duration) FilePaths {
 	sortedPaths :=  prioritize(paths)
 	remainingSpace := int64(totalSize)
@@ -91,7 +92,7 @@ func checksum(path string) (checksum SHA256Sum, err error) {
 }
 
 // GetDuplicates determines which of the given files are identical and returns
-// them. Each FilePaths object in the slice that is returned represents a group
+// them. Each FilePaths slice in the slice that is returned represents a group
 // of identical files. Files are compared first by size and then by checksum.
 func GetDuplicates(paths FilePaths) (duplicates []FilePaths) {
 	// Get the sizes of each file.
@@ -147,10 +148,18 @@ func GetNewestDuplicates(paths FilePaths) (duplicates FilePaths) {
 	return duplicates
 }
 
-// DuplicateFilter is equivalent to Filter but prioritizes duplicate files.
+// DuplicateFilter is equivalent to Filter except duplicate files are
+// prioritized first. Duplicate files are sorted in descending order of their
+// size.
 func DuplicateFilter(paths FilePaths, totalSize int64, minDuration time.Duration) FilePaths {
+	var selectedPaths FilePaths
+
 	duplicatePaths := GetNewestDuplicates(paths)
-	selectedPaths := duplicatePaths
+	for _, filePath := range duplicatePaths {
+		filePath.Flags |= FlagDuplicate
+		selectedPaths = append(selectedPaths, filePath)
+	}
+
 	maxSize := totalSize - duplicatePaths.TotalSize()
 	selectedPaths = append(selectedPaths, Filter(paths.Difference(duplicatePaths), maxSize, minDuration)...)
 

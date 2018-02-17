@@ -153,17 +153,28 @@ func list(c *cli.Context) (err error) {
 	delPaths := getPaths(c)
 
 	if c.Bool("paths-only") {
+		// Just print the file paths.
 		for _, filePath := range delPaths {
 			fmt.Println(filePath.Path)
 		}
 	} else {
+		// Print additional information with the file paths.
 		writer := tabwriter.NewWriter(os.Stdout, 0, 0, listPadding, ' ', 0)
-		fmt.Fprintln(writer, "Size\tLast Access\tPath")
+		fmt.Fprintln(writer, "Size\tLast Access\tDuplicate\tPath")
+
 		for _, filePath := range delPaths {
+			var isDuplicate string
+			if (filePath.Flags & paths.FlagDuplicate) == paths.FlagDuplicate {
+				isDuplicate = "Yes"
+			} else {
+				isDuplicate = "No"
+			}
+
 			fmt.Fprintf(
-				writer, "%v\t%v\t%v\n",
+				writer, "%v\t%v\t%v\t%v\n",
 				parse.FormatFileSize(filePath.Stat.Size()),
 				filePath.Time.AccessTime().Format("Jan 1 2006 15:04"),
+				isDuplicate,
 				filePath.Path)
 		}
 		writer.Flush()
