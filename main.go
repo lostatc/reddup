@@ -12,6 +12,7 @@ import (
 
 	"github.com/lostatc/reddup/parse"
 	"github.com/lostatc/reddup/paths"
+	"io"
 )
 
 const appHelpTemplate = `Usage:
@@ -159,25 +160,7 @@ func list(c *cli.Context) (err error) {
 		}
 	} else {
 		// Print additional information with the file paths.
-		writer := tabwriter.NewWriter(os.Stdout, 0, 0, listPadding, ' ', 0)
-		fmt.Fprintln(writer, "Size\tLast Access\tDuplicate\tPath")
-
-		for _, filePath := range delPaths {
-			var isDuplicate string
-			if (filePath.Flags & paths.FlagDuplicate) == paths.FlagDuplicate {
-				isDuplicate = "Yes"
-			} else {
-				isDuplicate = "No"
-			}
-
-			fmt.Fprintf(
-				writer, "%v\t%v\t%v\t%v\n",
-				parse.FormatFileSize(filePath.Stat.Size()),
-				filePath.Time.AccessTime().Format("Jan 1 2006 15:04"),
-				isDuplicate,
-				filePath.Path)
-		}
-		writer.Flush()
+		printPaths(os.Stdout, delPaths)
 	}
 
 	return nil
@@ -192,9 +175,7 @@ func move(c *cli.Context) (err error) {
 	moveFiles := true
 	if c.Bool("no-prompt") == false {
 		// Print the files to transfer.
-		for _, filePath := range delPaths {
-			fmt.Println(filePath.Path)
-		}
+		printPaths(os.Stdout, delPaths)
 
 		// Prompt the user to confirm the file transfer.
 		fmt.Printf("Move these %d files? [y/N] ", len(delPaths))
@@ -273,4 +254,29 @@ func getPaths(c *cli.Context) (delPaths paths.FilePaths) {
 	delPaths = paths.DuplicateFilter(nonExcludedPaths, maxSize, minDuration)
 
 	return delPaths
+}
+
+// printPaths prints a formatted table of information about each path in
+// pathsToPrint to output. This includes the path, size, last access time and
+// whether the file is a duplicate.
+func printPaths(output io.Writer, pathsToPrint paths.FilePaths) {
+	writer := tabwriter.NewWriter(output, 0, 0, listPadding, ' ', 0)
+	fmt.Fprintln(writer, "Size\tLast Access\tDuplicate\tPath")
+
+	for _, filePath := range pathsToPrint {
+		var isDuplicate string
+		if (filePath.Flags & paths.FlagDuplicate) == paths.FlagDuplicate {
+			isDuplicate = "Yes"
+		} else {
+			isDuplicate = "No"
+		}
+
+		fmt.Fprintf(
+			writer, "%v\t%v\t%v\t%v\n",
+			parse.FormatFileSize(filePath.Stat.Size()),
+			filePath.Time.AccessTime().Format("Jan 1 2006 15:04"),
+			isDuplicate,
+			filePath.Path)
+	}
+	writer.Flush()
 }
