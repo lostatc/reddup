@@ -324,7 +324,7 @@ func printPaths(output io.Writer, pathsToPrint paths.FilePaths) {
 			writer, "%d\t%s\t%v\t%s\t%s\n",
 			i + 1,
 			parse.FormatFileSize(filePath.Stat.Size()),
-			filePath.Time.AccessTime().Format("Jan 1 2006 15:04"),
+			filePath.Time.AccessTime().Format("Jan 01 2006 15:04"),
 			isDuplicate,
 			filePath.Path)
 	}
