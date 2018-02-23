@@ -32,6 +32,7 @@ import (
 
 	"github.com/lostatc/reddup/parse"
 	"github.com/lostatc/reddup/paths"
+	"sort"
 )
 
 const appHelpTemplate = `Usage:
@@ -100,6 +101,10 @@ func main() {
 			Name:  "min-time, t",
 			Usage: "Only include files which were last modified at least this much `<time>` in the past. This accepts the units 'h,' 'd,' 'm'  and 'y.'",
 			Value: "0h",
+		},
+		cli.BoolFlag {
+			Name: "no-duplicates",
+			Usage: "Don't automatically include duplicate files.",
 		},
 		cli.HelpFlag,
 	}
@@ -284,8 +289,18 @@ func getPaths(c *cli.Context) (delPaths paths.FilePaths) {
 		}
 	}
 
-	// Select paths to be cleaned up. Duplicate files are selected first.
-	delPaths = paths.DuplicateFilter(nonExcludedPaths, maxSize, minDuration)
+	// Find duplicate paths if applicable.
+	var duplicatePaths paths.FilePaths
+	if !c.GlobalBool("no-duplicates") {
+		duplicatePaths = paths.GetNewestDuplicates(nonExcludedPaths)
+		sort.Slice(duplicatePaths, func(i, j int) bool {
+			return duplicatePaths[j].Stat.Size() < duplicatePaths[i].Stat.Size()
+		})
+		nonExcludedPaths = nonExcludedPaths.Difference(duplicatePaths)
+	}
+
+	// Select non-duplicate paths to be cleaned up.
+	delPaths = append(duplicatePaths, paths.Filter(nonExcludedPaths, maxSize, minDuration)...)
 
 	return delPaths
 }

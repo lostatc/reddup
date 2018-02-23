@@ -143,12 +143,3 @@ func (f FilePaths) Difference(other FilePaths) FilePaths {
 
 	return output
 }
-
-// TotalSize returns the total size of all the FilePath objects in bytes.
-func (f FilePaths) TotalSize() (size int64) {
-	for _, filePath := range f {
-		size += filePath.Stat.Size()
-	}
-
-	return size
-}

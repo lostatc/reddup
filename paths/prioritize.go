@@ -145,6 +145,12 @@ func GetDuplicates(paths FilePaths) (duplicates []FilePaths) {
 		}
 	}
 
+	// Add a flag to differentiate these files as duplicates.
+	for i := range duplicates {
+		for j := range duplicates[i] {
+			duplicates[i][j].Flags |= FlagDuplicate
+		}
+	}
 	return duplicates
 }
 
@@ -153,37 +159,11 @@ func GetDuplicates(paths FilePaths) (duplicates []FilePaths) {
 func GetNewestDuplicates(paths FilePaths) (duplicates FilePaths) {
 	allDuplicates := GetDuplicates(paths)
 	for _, group := range allDuplicates {
-		newestPath := group[0]
-
-		for _, filePath := range group {
-			if filePath.Stat.ModTime().After(newestPath.Stat.ModTime()) {
-				newestPath = filePath
-			}
-		}
-
-		duplicates = append(duplicates, newestPath)
+		sort.Slice(group, func(i, j int) bool {
+			return group[i].Stat.ModTime().After(group[j].Stat.ModTime())
+		})
+		duplicates = append(duplicates, group[0])
 	}
 
 	return duplicates
-}
-
-// DuplicateFilter is equivalent to Filter except duplicate files are
-// prioritized first. Duplicate files are sorted in descending order of their
-// size.
-func DuplicateFilter(paths FilePaths, totalSize int64, minDuration time.Duration) FilePaths {
-	var selectedPaths FilePaths
-
-	duplicatePaths := GetNewestDuplicates(paths)
-	sort.Slice(duplicatePaths, func(i, j int) bool {
-		return duplicatePaths[j].Stat.Size() < duplicatePaths[i].Stat.Size()
-	})
-	for _, filePath := range duplicatePaths {
-		filePath.Flags |= FlagDuplicate
-		selectedPaths = append(selectedPaths, filePath)
-	}
-
-	maxSize := totalSize - duplicatePaths.TotalSize()
-	selectedPaths = append(selectedPaths, Filter(paths.Difference(duplicatePaths), maxSize, minDuration)...)
-
-	return selectedPaths
 }
