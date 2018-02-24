@@ -118,6 +118,7 @@ func main() {
 			Usage: "Print a list of files that should be cleaned up.",
 			Description: "Print a list of up to <size> bytes of files (e.g. 10GiB) in the directory <source> that should be cleaned up. For each file, also print its size, last access time and whether it is a duplicate.",
 			ArgsUsage: "<size> <source>",
+			UseShortOptionHandling: true,
 			Flags: []cli.Flag{
 				cli.BoolFlag {
 					Name: "paths-only",
@@ -132,6 +133,7 @@ func main() {
 			Usage: "Move files that should be cleaned up, prompting the user for confirmation first.",
 			Description: "Move up to <size> bytes of files (e.g. 10GiB) that should be cleaned up from <source> to <dest>. Prompt the user for confirmation before moving anything.",
 			ArgsUsage: "<size> <source> <dest>",
+			UseShortOptionHandling: true,
 			Flags: []cli.Flag {
 				cli.BoolFlag {
 					Name: "no-prompt",
@@ -145,6 +147,7 @@ func main() {
 			Name: "help",
 			Usage: "Show a list of commands or help for one command.",
 			ArgsUsage: "[command]",
+			UseShortOptionHandling: true,
 			Action: func(c *cli.Context) error {
 				args := c.Args()
 				if args.Present() {
