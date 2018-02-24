@@ -62,8 +62,8 @@ func prioritize(paths FilePaths) (sorted FilePaths) {
 		return priorities[i].Priority < priorities[j].Priority
 	})
 
-	for _, path := range priorities {
-		sorted = append(sorted, path.File)
+	for _, filePath := range priorities {
+		sorted = append(sorted, filePath.File)
 	}
 
 	return sorted
@@ -145,10 +145,10 @@ func GetDuplicates(paths FilePaths) (duplicates []FilePaths) {
 		}
 	}
 
-	// Add a flag to differentiate these files as duplicates.
+	// Set a piece of metadata to differentiate these files as duplicates.
 	for i := range duplicates {
 		for j := range duplicates[i] {
-			duplicates[i][j].Flags |= FlagDuplicate
+			duplicates[i][j].Metadata.Duplicate = true
 		}
 	}
 	return duplicates

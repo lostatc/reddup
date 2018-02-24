@@ -308,19 +308,25 @@ func getPaths(c *cli.Context) (delPaths paths.FilePaths) {
 	// Select non-duplicate paths to be cleaned up.
 	delPaths = append(duplicatePaths, paths.Filter(nonExcludedPaths, maxSize, minDuration)...)
 
+	// Assign a piece of metadata to each file path so that they can retain
+	// their original rank even if the returned slice is modified.
+	for i := range delPaths {
+		delPaths[i].Metadata.Rank = i + 1
+	}
+
 	return delPaths
 }
 
-// printPaths prints a formatted table of information about each path in
-// pathsToPrint to output. This includes the path, size, last access time and
-// whether the file is a duplicate.
+// printPaths prints a formatted table of information about each FilePath in
+// pathsToPrint to output. This includes the file's rank, path, size, last
+// access time and whether the file is a duplicate.
 func printPaths(output io.Writer, pathsToPrint paths.FilePaths) {
 	writer := tabwriter.NewWriter(output, 0, 0, listPadding, ' ', 0)
 	fmt.Fprintln(writer, "#\tSize\tLast Access\tDuplicate\tPath")
 
-	for i, filePath := range pathsToPrint {
+	for _, filePath := range pathsToPrint {
 		var isDuplicate string
-		if (filePath.Flags & paths.FlagDuplicate) == paths.FlagDuplicate {
+		if filePath.Metadata.Duplicate {
 			isDuplicate = "Yes"
 		} else {
 			isDuplicate = "No"
@@ -328,7 +334,7 @@ func printPaths(output io.Writer, pathsToPrint paths.FilePaths) {
 
 		fmt.Fprintf(
 			writer, "%d\t%s\t%v\t%s\t%s\n",
-			i + 1,
+			filePath.Metadata.Rank,
 			parse.FormatFileSize(filePath.Stat.Size()),
 			filePath.Time.AccessTime().Format("Jan 01 2006 15:04"),
 			isDuplicate,

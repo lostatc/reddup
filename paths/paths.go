@@ -32,17 +32,14 @@ import (
 	"github.com/djherbis/times"
 )
 
-type FileFlags uint
-
-const (
-	FlagDuplicate FileFlags = 1 << iota
-)
-
 type FilePath struct {
 	Path string
 	Time times.Timespec
 	Stat os.FileInfo
-	Flags FileFlags
+	Metadata struct {
+		Duplicate bool
+		Rank int
+	}
 }
 
 // NewFilePath creates a new FilePath struct from a path.
