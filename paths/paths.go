@@ -17,6 +17,9 @@ You should have received a copy of the GNU General Public License
 along with reddup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+Package paths provides functions and types for querying and manipulating files.
+ */
 package paths
 
 import (

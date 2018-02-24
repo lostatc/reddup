@@ -17,6 +17,9 @@ You should have received a copy of the GNU General Public License
 along with reddup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+Package parse provides functions for parsing input and formatting output.
+ */
 package parse
 
 import (
