@@ -154,8 +154,8 @@ func GetDuplicates(paths FilePaths) (duplicates []FilePaths) {
 	return duplicates
 }
 
-// GetOldestDuplicates returns all duplicate files, but omits the file with the
-// most recent mtime for each group of duplicates.
+// GetOldestDuplicates returns all duplicate files as a single slice, but omits
+// the file with the most recent mtime for each group of duplicates.
 func GetOldestDuplicates(paths FilePaths) (duplicates FilePaths) {
 	allDuplicates := GetDuplicates(paths)
 	for _, group := range allDuplicates {
