@@ -39,7 +39,7 @@ import (
 )
 
 const appHelpTemplate = `Usage:
-    {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global_options]{{end}}{{if .Commands}} command [command_args]{{end}}{{end}}{{if .VisibleFlags}}
+    {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global_options]{{end}}{{if .Commands}} <command> [command_args]{{end}}{{end}}{{if .VisibleFlags}}
 
 Global Options:
     {{range $index, $option := .VisibleFlags}}{{if $index}}
@@ -70,6 +70,9 @@ const listPadding = 2
 func main() {
 	cli.AppHelpTemplate = appHelpTemplate
 	cli.CommandHelpTemplate = commandHelpTemplate
+	cli.VersionPrinter = func(c *cli.Context) {
+		fmt.Fprintf(c.App.Writer, "%v %v\n", c.App.Name, c.App.Version)
+	}
 	cli.HelpFlag = cli.BoolFlag {
 		Name: "help",
 		Usage: "Show help.",
@@ -94,11 +97,11 @@ func main() {
 	app.Flags = []cli.Flag {
 		cli.StringSliceFlag {
 			Name: "exclude",
-			Usage: "Exclude files that match this `<pattern>`.",
+			Usage: "Exclude files that match this shell globbing `<pattern>`.",
 		},
 		cli.StringFlag {
 			Name: "exclude-from",
-			Usage: "Exclude files that match patterns in this `<file>`.",
+			Usage: "Exclude files that match shell globbing patterns in this `<file>`.",
 		},
 		cli.StringFlag {
 			Name:  "min-time, t",
