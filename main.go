@@ -305,7 +305,7 @@ func getPaths(c *cli.Context) (delPaths paths.FilePaths) {
 	// Find duplicate paths if applicable.
 	var duplicatePaths paths.FilePaths
 	if !c.GlobalBool("no-duplicates") {
-		duplicatePaths = paths.GetNewestDuplicates(nonExcludedPaths)
+		duplicatePaths = paths.GetOldestDuplicates(nonExcludedPaths)
 		sort.Slice(duplicatePaths, func(i, j int) bool {
 			return duplicatePaths[j].Stat.Size() < duplicatePaths[i].Stat.Size()
 		})

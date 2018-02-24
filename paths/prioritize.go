@@ -154,15 +154,15 @@ func GetDuplicates(paths FilePaths) (duplicates []FilePaths) {
 	return duplicates
 }
 
-// GetNewestDuplicates returns the file with the most recent mtime for each
-// group of duplicate files from the input.
-func GetNewestDuplicates(paths FilePaths) (duplicates FilePaths) {
+// GetOldestDuplicates returns all duplicate files, but omits the file with the
+// most recent mtime for each group of duplicates.
+func GetOldestDuplicates(paths FilePaths) (duplicates FilePaths) {
 	allDuplicates := GetDuplicates(paths)
 	for _, group := range allDuplicates {
 		sort.Slice(group, func(i, j int) bool {
 			return group[i].Stat.ModTime().After(group[j].Stat.ModTime())
 		})
-		duplicates = append(duplicates, group[0])
+		duplicates = append(duplicates, group[1:]...)
 	}
 
 	return duplicates

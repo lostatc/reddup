@@ -49,7 +49,7 @@ func TestGetDuplicates(t *testing.T) {
 	assertPathsEqual(t, duplicatePaths[0], expectedPaths, tempPath)
 }
 
-func TestGetNewestDuplicates(t *testing.T) {
+func TestGetOldestDuplicates(t *testing.T) {
 	tempPath, teardownFunc := setupFiles(t)
 	defer teardownFunc()
 
@@ -62,14 +62,16 @@ func TestGetNewestDuplicates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Change the mtime to a time in the past.
 	os.Chtimes("letters/upper/A.txt", time.Now(), time.Now().Add(-time.Second))
 
 	pathsToTest, err := NewFilePathsFromRel(testingFilePaths, tempPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	duplicatePaths := GetNewestDuplicates(*pathsToTest)
-	expectedPaths := []string{"letters/a.txt"}
+	duplicatePaths := GetOldestDuplicates(*pathsToTest)
+	expectedPaths := []string{"letters/upper/A.txt"}
 
 	assertPathsEqual(t, duplicatePaths, expectedPaths, tempPath)
 }
