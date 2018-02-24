@@ -30,7 +30,7 @@ import (
 
 type SHA256Sum [32]byte
 
-type FilePriority struct {
+type filePriority struct {
 	File FilePath
 	Priority float64
 }
@@ -41,7 +41,7 @@ const BlockSize int = 4096
 // larger size and less recent atime are sorted first.
 func prioritize(paths FilePaths) (sorted FilePaths) {
 	// Get a priority for each file path based on the size and atime.
-	priorities := make([]FilePriority, 0)
+	priorities := make([]filePriority, 0)
 	for _, path := range paths {
 		size := path.Stat.Size()
 		var priority float64
@@ -50,7 +50,7 @@ func prioritize(paths FilePaths) (sorted FilePaths) {
 		} else {
 			priority = float64(path.Time.AccessTime().Unix() / size)
 		}
-		priorities = append(priorities, FilePriority{File: path, Priority: priority})
+		priorities = append(priorities, filePriority{File: path, Priority: priority})
 	}
 
 	// Sort by path and then by priority so that the output for a given input

@@ -42,12 +42,21 @@ var testingFilePaths = []string {
 
 var testingPaths = append(testingDirPaths, testingFilePaths...)
 
-// setupFiles creates a set of test files in a temporary directory.
-func setupFiles(t *testing.T) (tempPath string, teardownFunc func()) {
+// setupTempDir creates a temporary directory.
+func setupTempDir(t *testing.T) (tempPath string, teardownFunc func()) {
 	tempPath, err := ioutil.TempDir("", "reddup-")
 	if err != nil {
 		t.Error(err)
 	}
+
+	return tempPath, func() {
+		os.RemoveAll(tempPath)
+	}
+}
+
+// setupFiles creates a set of test files in a temporary directory.
+func setupFiles(t *testing.T) (tempPath string, teardownFunc func()) {
+	tempPath, teardownFunc = setupTempDir(t)
 	os.Chdir(tempPath)
 
 	for _, dirPath := range testingDirPaths {
@@ -59,14 +68,12 @@ func setupFiles(t *testing.T) (tempPath string, teardownFunc func()) {
 		absPath := filepath.Join(tempPath, filePath)
 		file, err := os.Create(absPath)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		file.Close()
 	}
 
-	return tempPath, func() {
-		os.RemoveAll(tempPath)
-	}
+	return tempPath, teardownFunc
 }
 
 // writeFiles writes the given strings to their corresponding files.
@@ -91,18 +98,26 @@ func writeFiles(contents fileContents) error {
 // assertPathsEqual checks that the returned file paths are the same as the
 // expected file paths and fails the test if they are not. The expected file
 // paths are paths relative to startPath.
-func assertPathsEqual(t *testing.T, returned FilePaths, expected []string, startPath string) (err error) {
+func assertPathsEqual(t *testing.T, returned FilePaths, expected []string, startPath string) {
 	expectedFilePaths, err := NewFilePathsFromRel(expected, startPath)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
 	if !returned.Equals(*expectedFilePaths) {
-		t.Error(fmt.Sprintf(
+		t.Fatal(fmt.Sprintf(
 			"\nReturned but not expected: %v\nExpected but not returned: %v",
 			returned.Difference(*expectedFilePaths),
 			expectedFilePaths.Difference(returned)))
 	}
+}
 
-	return nil
+// assertError fails the test if an error was expected and not returned or if
+// an error was returned but not expected.
+func assertError(t *testing.T, returnedError error, errorExpected bool) {
+	if returnedError == nil && errorExpected {
+		t.Fatal("error expected but not returned")
+	} else if returnedError != nil && !errorExpected {
+		t.Fatal(fmt.Sprintf("error returned but not expected\nError: %v", returnedError))
+	}
 }

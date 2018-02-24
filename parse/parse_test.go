@@ -25,25 +25,31 @@ import (
 	"time"
 )
 
+// assertValue checks if the returned value is equal to the expected value and
+// fails the test if they are not.
 func assertValue(t *testing.T, returned interface{}, expected interface{}) {
 	if returned != expected {
-		t.Error(fmt.Sprintf("\nExpected: %v\nReturned: %v", expected, returned))
+		t.Fatal(fmt.Sprintf("\nExpected: %v\nReturned: %v", expected, returned))
 	}
 }
 
+// assertIntSlice checks if the returned value is equal to the expected value and
+// fails the test if they are not.
 func assertIntSlice(t *testing.T, returned []int, expected []int) {
 	for i, value := range returned {
 		if value != expected[i]	 {
-			t.Error(fmt.Sprintf("\nExpected: %v\nReturned: %v", expected, returned))
+			t.Fatal(fmt.Sprintf("\nExpected: %v\nReturned: %v", expected, returned))
 		}
 	}
 }
 
+// assertError fails the test if an error was expected and not returned or if
+// an error was returned but not expected.
 func assertError(t *testing.T, returnedError error, errorExpected bool) {
 	if returnedError == nil && errorExpected {
-		t.Error("error expected but not returned")
+		t.Fatal("error expected but not returned")
 	} else if returnedError != nil && !errorExpected {
-		t.Error(fmt.Sprintf("error returned but not expected\nError: %v", returnedError))
+		t.Fatal(fmt.Sprintf("error returned but not expected\nError: %v", returnedError))
 	}
 }
 
