@@ -48,7 +48,7 @@ func NewExcludeFromFile(path string) (*Exclude, error) {
 		log.Fatal(err)
 	}
 
-	patterns := make([]string, 0)
+	var patterns []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		pattern := scanner.Text()
@@ -62,23 +62,28 @@ func NewExcludeFromFile(path string) (*Exclude, error) {
 
 // CheckMatch returns true if the given file path matches any pattern relative
 // to startDir. Otherwise, it returns false.
-func (e *Exclude) CheckMatch(checkPath string, startDir string) (matches bool) {
+func (e *Exclude) CheckMatch(checkPath string, startDir string) (matched bool) {
 	for _, relPattern := range e.Patterns {
-		var absPattern string
+		var absPatterns []string
 
+		// Create one pattern to match the path itself and one pattern to match any paths under it.
 		if strings.HasPrefix(relPattern, string(os.PathSeparator)) {
-			absPattern = filepath.Join(startDir, relPattern, "**")
+			absPatterns = append(absPatterns, filepath.Join(startDir, relPattern))
+			absPatterns = append(absPatterns, filepath.Join(startDir, relPattern, "**"))
 		} else {
-			absPattern = filepath.Join("**", relPattern, "**")
+			absPatterns = append(absPatterns, filepath.Join(startDir, "**", relPattern))
+			absPatterns = append(absPatterns, filepath.Join(startDir, "**", relPattern, "**"))
 		}
 
-		matches, err := doublestar.PathMatch(absPattern, checkPath)
-		if err != nil {
-			continue
-		}
+		for _, absPattern := range absPatterns {
+			matched, err := doublestar.PathMatch(absPattern, checkPath)
+			if err != nil {
+				continue
+			}
 
-		if matches {
-			return true
+			if matched {
+				return true
+			}
 		}
 	}
 
