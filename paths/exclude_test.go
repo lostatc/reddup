@@ -21,19 +21,49 @@ package paths
 
 import (
 	"testing"
+	"io/ioutil"
 )
 
-func TestNewExcludeFromFile(t *testing.T) {
+const excludeTestFileContents = `
+# Comment
+*.odt
+/documents/reports		
+  /documents/**/receipt.pdf
+books/republic.pdf
 
+	  # Comment
+/photos/portrait.???
+#/photos/landscape.???
+/documents/code.py[cod]
+`
+var excludeTestPatterns = []string {
+"*.odt", "/documents/reports", "/documents/**/receipt.pdf", "books/republic.pdf",
+"/photos/portrait.???", "/documents/code.py[cod]",
+}
+
+func TestNewExcludeFromFile(t *testing.T) {
+	tempFile, err := ioutil.TempFile("", "reddup-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tempFile.Close()
+	tempFile.WriteString(excludeTestFileContents)
+
+	exclude, err := NewExcludeFromFile(tempFile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(exclude.Patterns)
+	for i, pattern := range exclude.Patterns {
+		if pattern != excludeTestPatterns[i] {
+			t.Errorf("%v != %v", pattern, excludeTestPatterns[i])
+		}
+	}
 }
 
 func TestCheckMatch(t *testing.T) {
-	patterns := []string {
-		"*.odt", "/documents/reports", "/documents/**/receipt.pdf", "books/republic.pdf",
-		"/photos/portrait.???",
-	}
-
-	exclude := Exclude{Patterns: patterns}
+	exclude := Exclude{Patterns: excludeTestPatterns}
 
 	testCases := []struct {
 		CheckPath string
@@ -52,6 +82,8 @@ func TestCheckMatch(t *testing.T) {
 		{"/dir/books/foo/republic.pdf", false},
 		{"/dir/photos/portrait.png", true},
 		{"/dir/photos/portrait.jpeg", false},
+		{"/dir/documents/code.pyc", true},
+		{"/dir/documents/code.py", false},
 	}
 
 	for _, tc := range testCases {
