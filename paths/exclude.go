@@ -51,8 +51,8 @@ func NewExcludeFromFile(path string) (*Exclude, error) {
 	var patterns []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		pattern := scanner.Text()
-		if commentRegex.FindString(pattern) == "" {
+		pattern := strings.TrimSpace(scanner.Text())
+		if pattern != "" && commentRegex.FindString(pattern) == "" {
 			patterns = append(patterns, pattern)
 		}
 	}
